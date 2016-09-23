@@ -1,0 +1,34 @@
+items to be added in struct thread:
+priority_recv //priority donated from other threads
+
+
+
+
+lines to be modified in thread.c
+list waiting_list:(whatever!)
+make a list of waiting list at the startup
+
+thread_tick:
+check the scheduled release time for all threads in sleeping list
+if sth to release exists, unblock it
+
+thread_block:
+send thread to waiting list
+
+thread_unblock:
+send thread to ready list
+
+
+synch.c
+lock_acquire:
+(when interrupt) donate priority to threads with low priority
+
+lock_release:
+when finished, return the donated priority immediately
+
+
+timer.c
+sleeping_list : struct(thread *, int64_t wakeup_ticks)
+
+timer_sleep : put thread to sleeping list before block
+
