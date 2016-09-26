@@ -96,12 +96,23 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
+  ASSERT (intr_get_level () == INTR_ON);
 
+  int64_t start = timer_ticks ();
+  int64_t wakeup_ticks;
+
+	
+	wakeup_ticks = start + ticks;
+	thread_sleep(wakeup_ticks);
+  
+  
+  /*
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
+*/
 }
+	
 
 /* Suspends execution for approximately MS milliseconds. */
 void
@@ -135,9 +146,13 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+
+	
   ticks++;
   thread_tick ();
+	thread_wake (ticks);
 }
+	
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */

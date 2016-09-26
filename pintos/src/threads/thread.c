@@ -138,7 +138,71 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
 }
+
+void
+thread_wake (int64_t ticks){
+	struct list_elem *t_elem;
+
+	t_elem = list_begin(&waiting_list);
+	while (t_elem != list_tail (&waiting_list)){
+		t = list_entry(t_elem, struct thread, elem);
+		
+		if (t->wakeup_ticks == -1){
+			break;
+		}
+		
+		if (t->wakeup_ticks > ticks){
+			break;
+		}
+		else{
+			t_elem = list_next (&t->elem)
+			list_remove (&t->elem)
+			thread_unblock(t);
+			
+		}
+	}
+}
+
+void
+thread_sleep (int64_t wakeup_ticks)
+{
+	struct thread * t = thread_current ();
+	
+	ASSERT (wakeup_ticks != -1);
+	
+	enum intr_level old_level = intr_disable ();
+	t->wakeup_ticks = wakeup_ticks;
+	
+	list_insert_ordered (&waiting_list, &t->elem, &wakeup_less_func);
+	thread_block ();
+	
+	intr_set_level (old_level);
+}
+
+
+bool
+wakeup_less_func(const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, NULL)
+{
+	struct thread_as *t1, *t2;
+
+	t1 = list_entry(elem1, struct thread, elem);
+	t2 = list_entry(elem2, struct thread, elem);
+	
+	if (t1->wakeup_ticks == -1){
+		return False;
+	}
+
+	if (t2->wakeup_ticks == -1){
+		return True;
+	}
+	else{
+		return t1->wakeup_ticks < t2->wakeup_ticks;
+	}
+}
+
+
 
 /* Prints thread statistics. */
 void
