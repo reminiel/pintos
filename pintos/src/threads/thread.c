@@ -144,6 +144,7 @@ thread_tick (void)
 void
 thread_wake (int64_t ticks){
 	struct list_elem *t_elem;
+	struct thread *t;
 
 	t_elem = list_begin(&waiting_list);
 	while (t_elem != list_tail (&waiting_list)){
@@ -157,8 +158,8 @@ thread_wake (int64_t ticks){
 			break;
 		}
 		else{
-			t_elem = list_next (&t->elem)
-			list_remove (&t->elem)
+			t_elem = list_next (&t->elem);
+			list_remove (&t->elem);
 			thread_unblock(t);
 			
 		}
@@ -175,7 +176,7 @@ thread_sleep (int64_t wakeup_ticks)
 	enum intr_level old_level = intr_disable ();
 	t->wakeup_ticks = wakeup_ticks;
 	
-	list_insert_ordered (&waiting_list, &t->elem, &wakeup_less_func);
+	list_insert_ordered (&waiting_list, &t->elem, &wakeup_less_func, NULL);
 	thread_block ();
 	
 	intr_set_level (old_level);
@@ -183,19 +184,19 @@ thread_sleep (int64_t wakeup_ticks)
 
 
 bool
-wakeup_less_func(const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, NULL)
+wakeup_less_func(const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, void *aux)
 {
-	struct thread_as *t1, *t2;
+	struct thread *t1, *t2;
 
 	t1 = list_entry(elem1, struct thread, elem);
 	t2 = list_entry(elem2, struct thread, elem);
 	
 	if (t1->wakeup_ticks == -1){
-		return False;
+		return 0;
 	}
 
 	if (t2->wakeup_ticks == -1){
-		return True;
+		return 1;
 	}
 	else{
 		return t1->wakeup_ticks < t2->wakeup_ticks;

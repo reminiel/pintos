@@ -88,7 +88,7 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
 
-	int64_t wakeup_ticks
+	int64_t wakeup_ticks;
 
     int priority;                       /* Priority. */
 	
@@ -124,7 +124,7 @@ void thread_unblock (struct thread *);
 
 void thread_sleep (int64_t wakeup_ticks);
 void thread_wake (int64_t ticks);
-bool wakeup_less_func (const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, NULL);
+bool wakeup_less_func (const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, void *aux);
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
