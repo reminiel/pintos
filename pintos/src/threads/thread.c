@@ -27,6 +27,9 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+
+/* List of processes (usually) in THREAD_BLOCKED state, that
+   is, processes that are not prepared to run. */
 static struct list waiting_list;
 
 /* Idle thread. */
@@ -37,6 +40,10 @@ static struct thread *initial_thread;
 
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
+
+/* Variable that shows first thread to unblock. */
+static int thread_awake_ticks;
+
 
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
@@ -138,72 +145,7 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
-
 }
-
-void
-thread_wake (int64_t ticks){
-	struct list_elem *t_elem;
-	struct thread *t;
-
-	t_elem = list_begin(&waiting_list);
-	while (t_elem != list_tail (&waiting_list)){
-		t = list_entry(t_elem, struct thread, elem);
-		
-		if (t->wakeup_ticks == -1){
-			break;
-		}
-		
-		if (t->wakeup_ticks > ticks){
-			break;
-		}
-		else{
-			t_elem = list_next (&t->elem);
-			list_remove (&t->elem);
-			thread_unblock(t);
-			
-		}
-	}
-}
-
-void
-thread_sleep (int64_t wakeup_ticks)
-{
-	struct thread * t = thread_current ();
-	
-	ASSERT (wakeup_ticks != -1);
-	
-	enum intr_level old_level = intr_disable ();
-	t->wakeup_ticks = wakeup_ticks;
-	
-	list_insert_ordered (&waiting_list, &t->elem, &wakeup_less_func, NULL);
-	thread_block ();
-	
-	intr_set_level (old_level);
-}
-
-
-bool
-wakeup_less_func(const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, void *aux)
-{
-	struct thread *t1, *t2;
-
-	t1 = list_entry(elem1, struct thread, elem);
-	t2 = list_entry(elem2, struct thread, elem);
-	
-	if (t1->wakeup_ticks == -1){
-		return 0;
-	}
-
-	if (t2->wakeup_ticks == -1){
-		return 1;
-	}
-	else{
-		return t1->wakeup_ticks < t2->wakeup_ticks;
-	}
-}
-
-
 
 /* Prints thread statistics. */
 void
@@ -268,6 +210,91 @@ thread_create (const char *name, int priority,
 
   return tid;
 }
+
+/* Functions to control timer interrupt. */
+
+void
+calculate_wake_ticks(int64_t ticks)
+{
+  if(thread_awake_ticks>ticks) thread_awake_ticks = ticks;
+}
+
+int64_t
+thread_wake_alarm(void)
+{
+  return thread_awake_ticks;
+}
+
+bool thread_time_priority
+     (const struct list_elem *a, const struct list_elem *b)
+{
+  int64_t c, d;
+  c = list_entry(a, struct thread, elem)->wakeup_ticks;
+  d = list_entry(b, struct thread, elem)->wakeup_ticks;
+
+  if (c == -1) return 0;
+  if (d == -1) return 1;
+  return c<d;
+}
+
+
+void
+thread_sleep (int64_t ticks)
+{
+  struct thread *t;
+
+  /* disables interrupt */
+
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  /* fetch current thread */
+
+  t = thread_current();
+
+  /* set timer prepared */
+
+  t->wakeup_ticks = ticks;
+  calculate_wake_ticks (ticks);
+
+  /* set thread in waiting queue */
+
+  list_insert_ordered (&waiting_list, &t->elem, thread_time_priority, 0);
+
+  /* block thread */
+
+  thread_block();
+
+  /* enable interrupt */
+
+  intr_set_level(old_level);
+}
+
+void
+thread_wake (int64_t ticks)
+{
+  struct list_elem *e;
+  struct thread *t;
+  e = list_begin(&waiting_list);
+  t = list_entry(e, struct thread, elem);
+
+  while(e != list_end(&waiting_list))
+  {
+    t = list_entry(e, struct thread, elem);
+    if(t->wakeup_ticks > ticks)
+    {
+      calculate_wake_ticks(t->wakeup_ticks);
+      break;
+    }
+    e = list_remove(&t->elem);
+    thread_unblock(t);
+  }
+}
+
+
+
+
+
 
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().

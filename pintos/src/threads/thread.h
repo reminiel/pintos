@@ -87,12 +87,9 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-
-	int64_t wakeup_ticks;
-
     int priority;                       /* Priority. */
-	
-	int priority_recv;
+    int wakeup_ticks;                   /* Timer interrupt control. */
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -119,12 +116,15 @@ void thread_print_stats (void);
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
+void calculate_wake_ticks(int64_t ticks);
+bool thread_time_priority(const struct list_elem *a,const struct list_elem *b);
+int64_t thread_wake_alarm (void);
+void thread_sleep (int64_t ticks);
+void thread_wake (int64_t ticks);
+
+
 void thread_block (void);
 void thread_unblock (struct thread *);
-
-void thread_sleep (int64_t wakeup_ticks);
-void thread_wake (int64_t ticks);
-bool wakeup_less_func (const struct list waiting_list, const struct list_elem *elem1, const struct list_elem *elem2, void *aux);
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
