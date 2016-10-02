@@ -79,6 +79,16 @@ static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+/* priority function for thread sort */
+bool
+thread_high_priority
+  (const struct list_elem *a, const struct list_elem *b)
+{
+  int a_priority = list_entry(a, struct thread, elem)->priority;
+  int b_priority = list_entry(b, struct thread, elem)->priority;
+  return a_priority>b_priority;
+}
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -207,7 +217,8 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+  if (thread_current()->priority < priority)
+    thread_yield();
   return tid;
 }
 
@@ -291,11 +302,6 @@ thread_wake (int64_t ticks)
   }
 }
 
-
-
-
-
-
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -329,7 +335,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  list_insert_ordered (&ready_list, &t->elem, thread_high_priority, 0);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -398,7 +404,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (curr != idle_thread) 
-    list_push_back (&ready_list, &curr->elem);
+    list_insert_ordered (&ready_list, &curr->elem, thread_high_priority, 0);
   curr->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -534,7 +540,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->wakeup_ticks = -1;
 }
+
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
    returns a pointer to the frame's base. */
