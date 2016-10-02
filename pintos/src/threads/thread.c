@@ -410,11 +410,19 @@ thread_yield (void)
   intr_set_level (old_level);
 }
 
+void
+thread_check_priority(void)
+{
+  if(list_empty(&ready_list)) return;
+  if(list_entry(list_front(&ready_list), struct thread, elem) > thread_get_priority()) thread_yield();
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  thread_check_priority();
 }
 
 /* Returns the current thread's priority. */
