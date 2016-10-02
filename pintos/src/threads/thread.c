@@ -42,7 +42,7 @@ static struct thread *initial_thread;
 static struct lock tid_lock;
 
 /* Variable that shows first thread to unblock. */
-static int thread_awake_ticks;
+static int64_t thread_awake_ticks;
 
 
 /* Stack frame for kernel_thread(). */
