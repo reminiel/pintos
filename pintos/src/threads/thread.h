@@ -23,6 +23,7 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
+#define DONATE_MAX_DEPTH 8
 
 /* A kernel thread or user process.
 
@@ -88,10 +89,12 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
+    int priority_true;
     int64_t wakeup_ticks;                   /* Timer interrupt control. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    struct list_elem full_elem;
     struct list listof_lock;
     struct lock *lock_waiting;
 #ifdef USERPROG
@@ -115,6 +118,7 @@ bool thread_high_priority(const struct list_elem *a,const struct list_elem *b);
 
 void thread_tick (void);
 void thread_print_stats (void);
+void thread_check_preemption (void);
 
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
