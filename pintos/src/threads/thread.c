@@ -226,18 +226,22 @@ thread_create (const char *name, int priority,
 
 /* Functions to control timer interrupt. */
 
+/* Updating thread_awake_ticks*/
 void
 calculate_wake_ticks(int64_t ticks)
 {
   if(thread_awake_ticks>ticks) thread_awake_ticks = ticks;
 }
 
+/* Passing a variable value, thread_awake_ticks
+ * used for timer_interrupt function in timer.c */
 int64_t
 thread_wake_alarm(void)
 {
   return thread_awake_ticks;
 }
 
+/* Make list_elem comparable*/
 bool thread_time_priority
      (const struct list_elem *a, const struct list_elem *b)
 {
@@ -254,32 +258,23 @@ bool thread_time_priority
 void
 thread_sleep (int64_t ticks)
 {
-  struct thread *t;
+  struct thread *curr = thread_current();
+  enum intr_level old_level;
 
   /* disables interrupt */
-
-  enum intr_level old_level;
   old_level = intr_disable();
 
-  /* fetch current thread */
-
-  t = thread_current();
-
   /* set timer prepared */
-
-  t->wakeup_ticks = ticks;
+  curr->wakeup_ticks = ticks;
   calculate_wake_ticks (ticks);
 
   /* set thread in waiting queue */
-
-  list_insert_ordered (&waiting_list, &t->elem, thread_time_priority, NULL);
+  list_insert_ordered (&waiting_list, &curr->elem, thread_time_priority, NULL);
 
   /* block thread */
-
   thread_block();
 
   /* enable interrupt */
-
   intr_set_level(old_level);
 }
 

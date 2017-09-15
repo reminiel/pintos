@@ -94,15 +94,13 @@ timer_elapsed (int64_t then)
 
 /* Suspends execution for approximately TICKS timer ticks. */
 void
-timer_sleep (int64_t ticks) 
+timer_sleep (int64_t ticks)
 {
-  int64_t start = timer_ticks ();
-
-  ASSERT (intr_get_level () == INTR_ON);
-
-  thread_sleep(ticks + start);
+    int64_t start = timer_ticks();
+    ASSERT(intr_get_level() == INTR_ON);
+    /* thread become awake when timer_interrupt occur */
+    thread_sleep(ticks + start);
 }
-
 /* Suspends execution for approximately MS milliseconds. */
 void
 timer_msleep (int64_t ms) 
@@ -203,6 +201,4 @@ real_time_sleep (int64_t num, int32_t denom)
     }
 }
 
-
 // some text
-
