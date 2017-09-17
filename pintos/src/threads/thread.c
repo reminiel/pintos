@@ -241,7 +241,7 @@ thread_wake_alarm(void)
   return thread_awake_ticks;
 }
 
-/* Make list_elem comparable*/
+/* Make list_elem comparable */
 bool thread_time_priority
      (const struct list_elem *a, const struct list_elem *b)
 {
