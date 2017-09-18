@@ -89,14 +89,14 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-    int priority_true;
-    int64_t wakeup_ticks;                   /* Timer interrupt control. */
+    int priority_true;                  /* Priority without priority donation.*/
+    int64_t wakeup_ticks;               /* Timer interrupt control. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    struct list_elem full_elem;
-    struct list listof_lock;
-    struct lock *lock_waiting;
+    //struct list_elem full_elem;         /* ??*/
+    struct list listof_lock;            /**/
+    struct lock *lock_waiting;          /**/
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

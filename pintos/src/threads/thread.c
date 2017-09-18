@@ -33,7 +33,7 @@ static struct list ready_list;
 static struct list waiting_list;
 
 /* list of every processes */
-static struct list full_list;
+// static struct list full_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -82,15 +82,6 @@ static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
-/* priority function for thread sort */
-bool
-thread_high_priority
-  (const struct list_elem *a, const struct list_elem *b)
-{
-  int a_priority = list_entry(a, struct thread, elem)->priority;
-  int b_priority = list_entry(b, struct thread, elem)->priority;
-  return a_priority>b_priority;
-}
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -113,7 +104,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&waiting_list);
-  list_init (&full_list);
+  //list_init (&full_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -224,7 +215,8 @@ thread_create (const char *name, int priority,
   return tid;
 }
 
-/* Functions to control timer interrupt. */
+/* Functions to control timer interrupt.
+ * (For project 1, Alarm Clock) */
 
 /* Updating thread_awake_ticks*/
 void
@@ -254,7 +246,9 @@ bool thread_time_priority
   return c<d;
 }
 
-
+/* Implementation of thread sleep. (non-busy waiting version)
+ * blocks current thread, and push it into the list, 'waiting_list'.
+ * waiting_list is sorted list by threads' wakeup_ticks values. */
 void
 thread_sleep (int64_t ticks)
 {
@@ -278,6 +272,8 @@ thread_sleep (int64_t ticks)
   intr_set_level(old_level);
 }
 
+/* Find threads to wake by traversing waiting_list
+ * appropriate threads are unblocked, removed from the list */
 void
 thread_wake (int64_t ticks)
 {
@@ -299,7 +295,21 @@ thread_wake (int64_t ticks)
   }
 }
 
-/* Implemented Lock area */
+/* Implemented Lock area
+ * (For Project 1, Priority Donation)*/
+
+/* priority function for thread sort */
+bool
+thread_high_priority
+        (const struct list_elem *a, const struct list_elem *b)
+{
+    int a_priority = list_entry(a, struct thread, elem)->priority;
+    int b_priority = list_entry(b, struct thread, elem)->priority;
+    return a_priority>b_priority;
+}
+
+/* Adding lock(parameter) in the lock list of current thread,
+ * and update its priority. */
 void
 thread_lock_add(struct lock *lock)
 {
@@ -316,6 +326,7 @@ thread_lock_add(struct lock *lock)
   intr_set_level (old_level);
 }
 
+/* Update thread's original priority (=priority without donation) */
 void thread_update_priority(struct thread *t)
 {
   enum intr_level old_level;
@@ -438,7 +449,7 @@ thread_exit (void)
   /* Just set our status to dying and schedule another process.
      We will be destroyed during the call to schedule_tail(). */
   intr_disable ();
-  list_remove(&thread_current()->full_elem);
+  //list_remove(&thread_current()->full_elem);
   thread_current ()->status = THREAD_DYING;
   schedule ();
   NOT_REACHED ();
@@ -623,7 +634,7 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->listof_lock);
   enum intr_level old_level;
   old_level = intr_disable();
-  list_push_back (&full_list, &t->full_elem);
+  //list_push_back (&full_list, &t->full_elem);
   intr_set_level (old_level);
 }
 

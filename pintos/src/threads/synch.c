@@ -12,7 +12,7 @@
    in all copies of this software.
 
    IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO
-   ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR
+   ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, ORf
    CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF THIS SOFTWARE
    AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF CALIFORNIA
    HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -213,6 +213,7 @@ lock_acquire (struct lock *lock)
   struct lock *l=lock;
   int depth=0;
 
+  /* If there's holder for lock, update its priority */
   if(lock->holder!=NULL)
   {
     t->lock_waiting = lock;
@@ -220,14 +221,14 @@ lock_acquire (struct lock *lock)
     {
       l->priority = t->priority;
       thread_donate_priority(l->holder);
-      l = l->holder->lock_waiting;
+      l = l->holder->lock_waiting;  //not necessary?
     }
   }
 
   sema_down (&lock->semaphore);
   enum intr_level old_level;
   old_level = intr_disable();
-  t = thread_current();
+  t = thread_current();             //not necessary?
 
   t->lock_waiting = NULL;
   lock->priority = t->priority;
